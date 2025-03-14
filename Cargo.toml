@@ -1,0 +1,17 @@
+[package]
+name = "cmakebuildsystem"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.32", features = ["derive"] }
+reqwest = "0.12.14"
+lazy_static = "1.5.0"
+indicatif = "0.17.11"
+tokio = { version = "1.44.1", features = ["full"] }
+url = "2.5.4"
+once_cell = "1.21.1"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+zip = "2.2.3"
+sevenz-rust = "0.6.1"
