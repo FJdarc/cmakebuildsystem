@@ -2,7 +2,7 @@ use clap::Parser;
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 use reqwest;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::fs::File;
@@ -11,6 +11,7 @@ use url::Url;
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use once_cell::sync::Lazy;
+use zip::ZipArchive;
 
 static URLS: Lazy<Mutex<Urls>> = Lazy::new(|| {
     Mutex::new(Urls {
@@ -88,7 +89,17 @@ async fn if_download(name: &str) {
                 }
             };
             match download(url).await {
-                Ok(path) => println!("文件已保存至: {}", path),
+                Ok(path) => {
+                    println!("文件已保存至: {}", path);
+                    let current_dir = env::current_dir().expect("无法获取当前目录");
+                    let full_path = current_dir.join(&path);
+                    if path.ends_with(".zip"){
+                        extract_zip(full_path.to_str().unwrap(), "tools").expect("解压失败");
+                    }
+                    if path.ends_with(".7z"){
+                        sevenz_rust::decompress_file(full_path, "tools").expect("complete");
+                    }
+                },
                 Err(e) => eprintln!("下载失败: {}", e),
             }
         }
@@ -146,6 +157,43 @@ async fn download(url: &str) -> Result<String, Box<dyn std::error::Error>> {
     }
 
     Ok(save_path.to_string_lossy().to_string())
+}
+
+fn extract_zip(zip_file_path: &str, extract_to: &str) -> io::Result<()> {
+    // 打开 ZIP 文件
+    let file = File::open(zip_file_path)?;
+    let mut archive = ZipArchive::new(file)?;
+
+    // 遍历 ZIP 文件中的每个文件
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)?;
+        let outpath = match file.enclosed_name() {
+            Some(path) => PathBuf::from(extract_to).join(path),
+            None => continue,
+        };
+
+        // 如果文件是一个目录，创建目录
+        if file.name().ends_with('/') {
+            println!("Creating directory: {}", outpath.display());
+            std::fs::create_dir_all(&outpath)?;
+        } else {
+            // 如果文件是一个文件，创建文件并写入内容
+            println!(
+                "Extracting file: {} ({} bytes)",
+                outpath.display(),
+                file.size()
+            );
+            if let Some(p) = outpath.parent() {
+                if !p.exists() {
+                    std::fs::create_dir_all(&p)?;
+                }
+            }
+            let mut outfile = File::create(&outpath)?;
+            io::copy(&mut file, &mut outfile)?;
+        }
+    }
+
+    Ok(())
 }
 
 async fn envrionment_check() {
