@@ -1,0 +1,13 @@
+[package]
+name = "cmakebuildsystem"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+clap = { version = "4.5.32", features = ["derive"] }
+url = "2.5.4"
+indicatif = "0.17.11"
+reqwest = { version = "0.12.14", features = ["blocking"] }
+lazy_static = "1.5.0"
+zip = "2.2.3"
+sevenz-rust = "0.6.1"
