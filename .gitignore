@@ -1,4 +1,5 @@
-/target
-/build
-/downloads
-/tools
+target/
+build/
+downloads/
+tools/
+.cache/
